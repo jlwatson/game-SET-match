@@ -5,30 +5,29 @@ Applies the Shi-Tomasi corner detector to extract corners from a given input
 image.
 '''
 
+import itertools as it
+import math
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.misc import imread, imresize
+from scipy.misc import imread, imresize, imsave
 from scipy.signal import fftconvolve
 import sys
+import time
 
 '''
 Note: borrowed from jlwatson's grayscale implementation in PS0
 '''
 def convert_to_grayscale(color_image):
-    grayscale_image = np.empty((color_image.shape[0], color_image.shape[1]))
-    for r in range(grayscale_image.shape[0]):
-        for c in range(grayscale_image.shape[1]):
-            grayscale_image[r, c] = 0.299 * color_image[r,c][0] + \
-                                    0.587 * color_image[r,c][1] + \
-                                    0.114 * color_image[r,c][2]
-    return grayscale_image
+    return 0.299 * color_image[:,:,0] + \
+           0.587 * color_image[:,:,1] + \
+           0.114 * color_image[:,:,2]
 
 
-WINDOW_RADIUS = 6
+WINDOW_RADIUS = 3
+THRESHOLD = 8e5
+SOBEL_THRESH = 0.76
 
-def shi_tomasi(image):
-
-    ### Calculate X and Y derivative convolutions ###
+def calc_gradients(image):
 
     Ix, Iy = np.zeros(image.shape), np.zeros(image.shape)
 
@@ -47,41 +46,125 @@ def shi_tomasi(image):
             Iy[r-1,c-1] = -padded[r-1,c-1] -2*padded[r-1,c] -padded[r-1,c+1] + \
                 padded[r+1,c-1] + 2*padded[r+1,c] + padded[r+1,c+1]
 
+    return Ix, Iy
+
+
+def shi_tomasi(image):
+
+    # Calculate X and Y derivative convolutions
+    Ix, Iy = calc_gradients(image)
+
     # Apply Sobel Filter for edge detection
     image = np.sqrt(Ix**2 + Iy**2)
+    image = (image - np.min(image)) / (np.max(image) - np.min(image))
+
+    # Threshold
+    for r in range(image.shape[0]):
+        for c in range(image.shape[1]):
+            image[r,c] = 0.0 if image[r,c] < SOBEL_THRESH else 1.0
 
     ### For each x, y in the image, get matrix M and score using eigenvals ###
+    Ix2, Iy2, Ixy = Ix**2, Iy**2, Ix*Iy
     scores = np.zeros(image.shape)
-    for y0 in range(image.shape[0]):
-        for x0 in range(image.shape[1]):
-            M = np.zeros((2,2))
-            for y in range(y0-WINDOW_RADIUS,y0+WINDOW_RADIUS+1):
-                for x in range(x0-WINDOW_RADIUS,x0+WINDOW_RADIUS+1):
-                    if y>=image.shape[0] or y<0 or x>=image.shape[1] or x<0:
-                        continue # pixel not in image is not in window
-                    M += np.array([[Ix[y,x]**2, Ix[y,x]*Iy[y,x]],
-                                   [Ix[y,x]*Iy[y,x], Iy[y,x]**2]])
+    for y in range(image.shape[0]):
+        for x in range(image.shape[1]):
+            minY, maxY = y-WINDOW_RADIUS, y+WINDOW_RADIUS+1
+            if minY < 0:
+                minY = 0
+            if maxY > image.shape[0]:
+                maxY = image.shape[0]
+
+            minX, maxX = x-WINDOW_RADIUS, x+WINDOW_RADIUS+1
+            if minX < 0:
+                minX = 0
+            if maxX > image.shape[1]:
+                maxX = image.shape[1]
+
+            M = np.array([[np.sum(Ix2[minY:maxY, minX:maxX]),
+                           np.sum(Ixy[minY:maxY, minX:maxX])],
+                          [np.sum(Ixy[minY:maxY, minX:maxX]),
+                           np.sum(Iy2[minY:maxY, minX:maxX])],
+                         ])
+
             eigenvals, _ = np.linalg.eig(M)
-            scores[y0,x0] = min(eigenvals[0], eigenvals[1])
+            score_val = min(eigenvals[0], eigenvals[1])
+            scores[y,x] = 0.0 if score_val < THRESHOLD or image[y,x] <= 0.0 else score_val
 
-    plt.imshow(scores, cmap='gray')
-    plt.show()
+    return scores, image
 
-    '''
-    # Sobel filter and FFT convolution that mimics the above loop
-    Ix_fft = fftconvolve(image, np.array([[1, 0, -1],[2, 0, -2],[1, 0, -1]]))
-    Iy_fft = fftconvolve(image, np.array([[1, 2, 1],[0, 0, 0],[-1, -2, -1]]))
-    G2 = np.sqrt(Ix_fft**2 + Iy_fft**2)
 
-    plt.imshow(G, cmap='gray')
-    plt.imshow(G2, cmap='gray')
-    plt.show()
-    '''
+MAX_WINDOW_R = 3
+def detect_max(scores):
+    top_scores = reversed([np.unravel_index(x,scores.shape) for x in np.argsort(scores, axis=None)])
+
+    points = []
+    for r, c in top_scores:
+        if scores[r,c] < THRESHOLD:
+            continue
+
+        points.append((r,c))
+        plt.scatter(x=c, y=r, s=10, c='b')
+        scores[r-MAX_WINDOW_R:r+MAX_WINDOW_R+1,c-MAX_WINDOW_R:c+MAX_WINDOW_R+1] = np.zeros((MAX_WINDOW_R*2+1, MAX_WINDOW_R*2+1))
+
+    print len(points)
+    return points
+
+
+def points_before(points, i, axis):
+    count = 0
+    for p in points:
+        if p[axis] < i:
+            count += 1
+
+    return count
+
+
+# points are in (r,c) pairs
+def create_segments(image, points):
+
+    points_by_row = sorted(points, key=lambda x: x[0])
+    points_by_col = sorted(points, key=lambda x: x[1])
+    minr, maxr = points_by_row[0][0], points_by_row[-1][0]
+    minc, maxc = points_by_col[0][1], points_by_col[-1][1]
+
+    row_boundaries, col_boundaries = [], [] 
+
+    goal = 0
+    temp = []
+    for r in range(minr-20, maxr+20):
+        before = points_before(points, r, 0)
+        if before == goal:
+            temp.append(r)
+        elif temp:
+            row_boundaries.append(int(np.average(temp)))
+            goal += 16
+            temp = []
+    row_boundaries.append(int(maxr))
+
+    goal = 0
+    temp = []
+    for c in range(minc-20, maxc+20):
+        before = points_before(points, c, 1)
+        if before == goal:
+            temp.append(c)
+        elif temp:
+            col_boundaries.append(int(np.average(temp)))
+            goal += 12
+            temp = []
+    col_boundaries.append(int(maxc))
+
+    for rb in row_boundaries:
+        plt.plot([0, image.shape[1]], [rb, rb])
+
+    for cb in col_boundaries:
+        plt.plot([cb, cb], [0, image.shape[0]])
+
+    return row_boundaries, col_boundaries
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print "Usage: python corner_detection.py <input_image.jpg>"
+    if len(sys.argv) != 3:
+        print "Usage: python corner_detection.py <input_image.jpg> <output dir>"
         exit(-1)
 
     image_name = sys.argv[1]
@@ -89,8 +172,18 @@ if __name__ == "__main__":
         print "Error: expecting JPG image input"
         exit(-1)
 
-    input_image = imresize(imread(image_name), 0.3)
+    input_image = imresize(imread(image_name), 0.15)
     grayscale = convert_to_grayscale(input_image)
 
-    shi_tomasi(grayscale)
+    scores, sobel_image = shi_tomasi(grayscale)
+
+    plt.imshow(input_image)
+    points = detect_max(scores)
+    r_boundaries, c_boundaries = create_segments(sobel_image, points)
+    for i in range(len(r_boundaries)-1):
+        for j in range(len(c_boundaries)-1):
+            segment = input_image[r_boundaries[i]:r_boundaries[i+1], c_boundaries[j]:c_boundaries[j+1]]
+            imsave(sys.argv[2]+"/image"+str(i)+str(j)+".jpg", segment)
+
+    plt.show()
 
