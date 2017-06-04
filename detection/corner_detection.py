@@ -90,6 +90,8 @@ def shi_tomasi(image):
             score_val = min(eigenvals[0], eigenvals[1])
             scores[y,x] = 0.0 if score_val < THRESHOLD or image[y,x] <= 0.0 else score_val
 
+    plt.imshow(scores, cmap='gray')
+    plt.show()
     return scores, image
 
 
@@ -103,7 +105,7 @@ def detect_max(scores):
             continue
 
         points.append((r,c))
-        plt.scatter(x=c, y=r, s=10, c='b')
+        plt.scatter(x=c, y=r, s=25, c='b')
         scores[r-MAX_WINDOW_R:r+MAX_WINDOW_R+1,c-MAX_WINDOW_R:c+MAX_WINDOW_R+1] = np.zeros((MAX_WINDOW_R*2+1, MAX_WINDOW_R*2+1))
 
     print len(points)
@@ -154,10 +156,10 @@ def create_segments(image, points):
     col_boundaries.append(int(maxc))
 
     for rb in row_boundaries:
-        plt.plot([0, image.shape[1]], [rb, rb])
+        plt.plot([0, image.shape[1]], [rb, rb], 'b')
 
     for cb in col_boundaries:
-        plt.plot([cb, cb], [0, image.shape[0]])
+        plt.plot([cb, cb], [0, image.shape[0]], 'b')
 
     return row_boundaries, col_boundaries
 
