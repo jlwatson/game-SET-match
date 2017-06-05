@@ -13,6 +13,8 @@ from scipy.misc import imread, imresize, imsave
 from scipy.signal import fftconvolve
 import sys
 import time
+import pdb
+from card_extractor import *
 
 '''
 Note: borrowed from jlwatson's grayscale implementation in PS0
@@ -161,6 +163,20 @@ def create_segments(image, points):
 
     return row_boundaries, col_boundaries
 
+def temp_card_assignments(row_boundaries, col_boundaries, points):
+    row_centers = [float(row_boundaries[i] + row_boundaries[i+1]) / 2 for i in range(len(row_boundaries) - 1)]
+    col_centers = [float(col_boundaries[i] + col_boundaries[i+1]) / 2 for i in range(len(col_boundaries) - 1)]
+    centroids = []
+    for rc in row_centers:
+        for cc in col_centers:
+            centroids.append((rc, cc))
+    card_points = [[] for i in xrange(len(centroids))]
+    points = np.array(points)
+    centroids = np.array(centroids)
+    for p in points:
+        card = min([(i, np.linalg.norm(p - c)) for i, c in enumerate(centroids)], key=lambda x:x[1])[0]
+        card_points[card].append(p)
+    return np.array(card_points)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
@@ -180,10 +196,14 @@ if __name__ == "__main__":
     plt.imshow(input_image)
     points = detect_max(scores)
     r_boundaries, c_boundaries = create_segments(sobel_image, points)
-    for i in range(len(r_boundaries)-1):
-        for j in range(len(c_boundaries)-1):
-            segment = input_image[r_boundaries[i]:r_boundaries[i+1], c_boundaries[j]:c_boundaries[j+1]]
-            imsave(sys.argv[2]+"/image"+str(i)+str(j)+".jpg", segment)
+    card_clusters = temp_card_assignments(r_boundaries, c_boundaries, points)
+    extract_cards(input_image, card_clusters, sys.argv[2])
+    # Segment into groups of 4
+    # Create a method that given four-point tuples returns rectified card images
+    # for i in range(len(r_boundaries)-1):
+    #     for j in range(len(c_boundaries)-1):
+    #         segment = input_image[r_boundaries[i]:r_boundaries[i+1], c_boundaries[j]:c_boundaries[j+1]]
+    #         imsave(sys.argv[2]+"/image"+str(i)+str(j)+".jpg", segment)
 
     plt.show()
 
