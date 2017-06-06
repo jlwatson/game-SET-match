@@ -4,6 +4,8 @@ from pixel_feature_extractor import *
 import pdb
 from sklearn.svm import LinearSVC
 from feature_classifier import *
+import sys
+import json
 
 class ColorClassifier(FeatureClassifier):
 	COLOR_CODES = dict({'green': 0, 'purple': 1, 'red': 2})
@@ -75,6 +77,12 @@ class ColorClassifier(FeatureClassifier):
 
 
 if __name__ == '__main__':
-	c = ColorClassifier('../train_images_1', '../test_images_1', '../set_images')
+	args = sys.argv[1:]
+	if len(args) > 0:
+		features_file = open(args[0], 'r')
+		img_features = json.load(features_file)
+		c = ColorClassifier('../train_images_1', '../output', '../set_images', img_features)
+	else:
+		c = ColorClassifier('../train_images_1', '../test_images_1', '../set_images')
 	c.process_images()
 	c.train()
