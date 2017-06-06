@@ -67,8 +67,6 @@ class Pipeline:
     cur_predictions = clf.predict(X)
     predictions[clf_name] = cur_predictions
     
-    pdb.set_trace()
-
     if self.testing:
         f1 = f1_score(Y[:, i], cur_predictions, labels=[0, 1, 2], average='micro')
         print clf_name
