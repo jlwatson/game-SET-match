@@ -89,3 +89,4 @@ ENV/
 .ropeproject
 
 detection/output/
+.DS_Store
