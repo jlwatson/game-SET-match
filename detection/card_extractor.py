@@ -3,10 +3,15 @@ import numpy as np
 from scipy.misc import imread, imresize, imsave
 import cv2
 import pdb
+import string
 
-def extract_cards(img, card_clusters, dirname):
+def extract_cards(img, card_clusters, dirname, card_name_file=None):
 
-    # corner_orig = card_clusters[0]
+    card_names = ['image' + str(i) + '.jpg' for i in xrange(12)]
+    if card_name_file is not None:
+        fo = open(card_name_file, "r")
+        card_names = [string.strip(name) for name in fo.readlines()]
+
 
     for img_index, corner_orig in enumerate(card_clusters):
         # Sort card corners in same order as corner_transformed
@@ -31,4 +36,4 @@ def extract_cards(img, card_clusters, dirname):
         # plt.subplot(122),plt.imshow(dst),plt.title('Output')
         # plt.show()
         # card_img_tight = img[minR:maxR, minC:maxC]
-        imsave(dirname+"/image"+str(img_index)+".jpg", dst)
+        imsave(dirname+ '/' + card_names[img_index], dst)

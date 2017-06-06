@@ -15,6 +15,7 @@ import sys
 import time
 import pdb
 from card_extractor import *
+import argparse
 
 '''
 Note: borrowed from jlwatson's grayscale implementation in PS0
@@ -176,19 +177,26 @@ def temp_card_assignments(row_boundaries, col_boundaries, points):
     for p in points:
         card = min([(i, np.linalg.norm(p - c)) for i, c in enumerate(centroids)], key=lambda x:x[1])[0]
         card_points[card].append(p)
+    print card_points
     return np.array(card_points)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print "Usage: python corner_detection.py <input_image.jpg> <output dir>"
-        exit(-1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('image_name')
+    parser.add_argument('output_dir')
+    parser.add_argument('--labels', default=None)
+    args = parser.parse_args()
 
-    image_name = sys.argv[1]
-    if not ".jpg" in image_name:
+    # if len(sys.argv) != 3:
+    #     print "Usage: python corner_detection.py <input_image.jpg> <output dir>"
+    #     exit(-1)
+
+    # image_name = sys.argv[1]
+    if not ".jpg" in args.image_name:
         print "Error: expecting JPG image input"
         exit(-1)
 
-    input_image = imresize(imread(image_name), 0.15)
+    input_image = imresize(imread(args.image_name), 0.15)
     grayscale = convert_to_grayscale(input_image)
 
     scores, sobel_image = shi_tomasi(grayscale)
@@ -197,7 +205,7 @@ if __name__ == "__main__":
     points = detect_max(scores)
     r_boundaries, c_boundaries = create_segments(sobel_image, points)
     card_clusters = temp_card_assignments(r_boundaries, c_boundaries, points)
-    extract_cards(input_image, card_clusters, sys.argv[2])
+    extract_cards(input_image, card_clusters, args.output_dir, args.labels)
     # Segment into groups of 4
     # Create a method that given four-point tuples returns rectified card images
     # for i in range(len(r_boundaries)-1):

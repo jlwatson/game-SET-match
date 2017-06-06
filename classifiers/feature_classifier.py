@@ -4,10 +4,11 @@ from pixel_feature_extractor import *
 import pdb
 from sklearn.svm import LinearSVC
 from sklearn.metrics import f1_score
+from sklearn.externals import joblib
 
 class FeatureClassifier(object):
 
-	def __init__(self, train_dir, test_dir, base_dir, codes, feature_index):
+	def __init__(self, train_dir, test_dir, base_dir, codes, feature_index, featureType='unknown'):
 		self.train_dir = train_dir
 		self.test_dir = test_dir
 		self.base_dir = base_dir
@@ -17,6 +18,7 @@ class FeatureClassifier(object):
 		self.test_Y = []
 		self.codes = codes
 		self.feature_index = feature_index
+		self.type = featureType
 
 
 	def process_images(self):
@@ -59,6 +61,7 @@ class FeatureClassifier(object):
 		print "Score: %f" % score
 		f1 = f1_score(self.test_Y, predictions, labels=[0, 1, 2], average='micro')
 		print "F1 Score: %f" % f1
+		joblib.dump(lin_clf, '../pipeline/' + self.type + '_clf.pkl') 
 		return (score, f1)
 
 	def reset(self):

@@ -9,7 +9,7 @@ class ColorClassifier(FeatureClassifier):
 	COLOR_CODES = dict({'green': 0, 'purple': 1, 'red': 2})
 
 	def __init__(self, train_dir, test_dir, base_dir):
-		super(ColorClassifier, self).__init__(train_dir, test_dir, base_dir, ColorClassifier.COLOR_CODES, 0)
+		super(ColorClassifier, self).__init__(train_dir, test_dir, base_dir, ColorClassifier.COLOR_CODES, 0, 'color')
 
 
 if __name__ == '__main__':
