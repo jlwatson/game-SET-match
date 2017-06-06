@@ -274,8 +274,7 @@ def find_closest_pair(cluster_im, centroid_angles, pt, unchosen_indexes, cluster
 
 
 def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_im):
-    plt.imshow(out_im)
-    plt.show()
+    # plt.imshow(out_im)
     points = np.array(points)
     if points.shape[0] % 4 != 0:
         print "WARNING: number of corners detected is not a multiple of 4"
@@ -325,16 +324,18 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
         pt1_idx_2 = np.array([unchosen_pt_indexes[pt1_idx_2]])
         pt2_idx_2 = np.array([unchosen_pt_indexes[pt2_idx_2]])
 
+        '''
         plt.scatter(x=points[pt_index,1], y=points[pt_index,0], s=25, c='r')
         plt.scatter(x=points[pt1_idx,1], y=points[pt1_idx,0], s=25, c='r')
         plt.scatter(x=points[pt2_idx,1], y=points[pt2_idx,0], s=25, c='r')
+        '''
         if (points[pt1_idx_2][0] == pt).all():
             groups.append([pt, pt2, points[pt2_idx][0], points[pt2_idx_2][0]])
-            plt.scatter(x=points[pt2_idx_2,1], y=points[pt2_idx_2,0], s=25, c='r')
+            # plt.scatter(x=points[pt2_idx_2,1], y=points[pt2_idx_2,0], s=25, c='r')
             unchosen[pt2_idx_2] = False
         elif (points[pt2_idx_2][0] == pt).all():
             groups.append([pt, pt2, points[pt2_idx][0], points[pt1_idx_2][0]])
-            plt.scatter(x=points[pt1_idx_2,1], y=points[pt1_idx_2,0], s=25, c='r')
+            # plt.scatter(x=points[pt1_idx_2,1], y=points[pt1_idx_2,0], s=25, c='r')
             unchosen[pt1_idx_2] = False
         else:
             print "ERROR: couldn't make group of 4, exiting."
@@ -344,8 +345,8 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
         unchosen[pt_index] = False
         unchosen[pt2_idx] = False
 
-    plt.show()
-    return groups
+    # plt.show()
+    return groups, len(groups)
 
 
 if __name__ == "__main__":
@@ -362,10 +363,6 @@ if __name__ == "__main__":
     grayscale = convert_to_grayscale(input_image)
 
     sobel_image, Ix, Iy = sobel_filter(grayscale)
-    '''
-    plt.imshow(sobel_image, cmap='gray')
-    plt.show()
-    '''
 
     np.set_printoptions(precision=3, suppress=True, linewidth=1000)
 
@@ -373,7 +370,6 @@ if __name__ == "__main__":
     # Features for potential X/Y gradient clustering
     actual_features = np.hstack(
         (
-            # features, 
             np.array([Ix[features[:,0], features[:,1]]]).T,
             np.array([Iy[features[:,0], features[:,1]]]).T,
         )
@@ -404,20 +400,11 @@ if __name__ == "__main__":
         for c in range(clustered_image.shape[1]):
             if clustered_image[r,c] == 0: continue
             output_image[r,c] = colors[clustered_image[r,c] - 1]
-    
-    plt.imshow(output_image)
-    # plt.show()
 
     scores, sobel_image = shi_tomasi(grayscale)
 
-    # plt.imshow(input_image)
     points = detect_max(scores)
-    grouped_pts = group_points(points, clustered_image, centroids, Ix, Iy, output_image)
-    print grouped_pts
-    exit(1)
-
-    card_clusters = temp_card_assignments(r_boundaries, c_boundaries, points)
+    grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image)
+    card_clusters = np.concatenate(grouped_pts).reshape((num_cards, 4, 2))
     extract_cards(input_image, card_clusters, sys.argv[2])
-
-    plt.show()
 
