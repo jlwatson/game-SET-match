@@ -9,6 +9,7 @@ import math
 import random
 import os
 import sys
+import json
 
 NUM_FOLDS = 9
 
@@ -50,23 +51,28 @@ if __name__ == '__main__':
 	c = ShadeClassifier('../train_images_1', '../test_images_1', '../set_images')
 	if classifier_type == 'color':
 		img_features = {}
-		other_classifiers = [
-			ShapeClassifier('../train_images_1', '../test_images_1', '../set_images'),
-			ShadeClassifier('../train_images_1', '../test_images_1', '../set_images'),
-			QuantityClassifier('../train_images_1', '../test_images_1', '../set_images')
-		]
-		for fold in folds:
-			extracted_features = []
-			for oc in other_classifiers:
-				oc.process_images_split_dir(fold[0], fold[1])
-				extracted_features.append(oc.train()[2])
-				oc.reset()
-			for i, img in enumerate(fold[1]):
-				img_features[img] = [feature_set[i] for feature_set in extracted_features]
+		if len(args) > 1:
+			features_file = open(args[1], 'r')
+			img_features = json.load(features_file)
+
+		else:
+			other_classifiers = [
+				ShapeClassifier('../train_images_1', '../test_images_1', '../set_images'),
+				ShadeClassifier('../train_images_1', '../test_images_1', '../set_images'),
+				QuantityClassifier('../train_images_1', '../test_images_1', '../set_images')
+			]
+			for fold in folds:
+				extracted_features = []
+				for oc in other_classifiers:
+					oc.process_images_split_dir(fold[0], fold[1])
+					extracted_features.append(oc.train()[2])
+					oc.reset()
+				for i, img in enumerate(fold[1]):
+					img_features[img] = [feature_set[i] for feature_set in extracted_features]
 		print img_features
 
 
-		c = ColorClassifier('../train_images_1', '../test_images_1', '../set_images')
+		c = ColorClassifier('../train_images_1', '../test_images_1', '../set_images', img_features)
 	elif classifier_type == 'shape':
 		c = ShapeClassifier('../train_images_1', '../test_images_1', '../set_images')
 	elif classifier_type == 'quantity':
