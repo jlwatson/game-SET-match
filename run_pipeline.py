@@ -22,6 +22,7 @@ class Pipeline:
     p = PixelFeatureExtractor()
     Y = []
     X = []
+    X_color = []
     for filename in os.listdir(self.card_dir):
       print filename
       if filename.endswith(".jpg"):
@@ -31,6 +32,7 @@ class Pipeline:
           label_vals = [self.CODES[label] for i, label in enumerate(labels)]
           Y.append(label_vals)
         X.append(p.get_features(self.card_dir + '/' + filename))
+        X_color.append(p.get_color_features(self.card_dir + '/' + filename))
 
     if self.testing:
       Y = np.array(Y)
@@ -55,23 +57,24 @@ class Pipeline:
         print "F1 Score for %s: %f" % (clf_name, f1)
 
     # Color
-    clf_name = self.CLASSIFIER_NAMES[0]
-    cur_predictions = []
-    for filename in os.listdir(self.card_dir):
-      if filename.endswith(".jpg"):
-        cur_predictions.append(get_color(self.card_dir + '/' + filename))
-
-    # for i in xrange(1, 4):
-    #   clf_name = self.CLASSIFIER_NAMES[i]
-    #   clf = self.classifiers[i]
-
-    #   add_features = predictions[clf_name]
-
-    #   X = np.concatenate((X, np.array(add_features).reshape((12, 1))), axis=1)
-
     # clf_name = self.CLASSIFIER_NAMES[0]
-    # clf = self.classifiers[0]
-    # cur_predictions = clf.predict(X)
+    # cur_predictions = []
+    # for filename in os.listdir(self.card_dir):
+    #   if filename.endswith(".jpg"):
+    #     cur_predictions.append(get_color(self.card_dir + '/' + filename))
+
+    for i in xrange(1, 4):
+      clf_name = self.CLASSIFIER_NAMES[i]
+      clf = self.classifiers[i]
+
+      add_features = predictions[clf_name]
+
+      X_color = np.concatenate((X_color, np.array(add_features).reshape((12, 1))), axis=1)
+
+    clf_name = self.CLASSIFIER_NAMES[0]
+    clf = self.classifiers[0]
+    cur_predictions = clf.predict(X_color)
+
     predictions[clf_name] = cur_predictions
     
     if self.testing:

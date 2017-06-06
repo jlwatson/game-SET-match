@@ -24,7 +24,7 @@ class ColorClassifier(FeatureClassifier):
           trim_name = filename.split('.')[0]
           quant_shape_shade = [ColorClassifier.CODES[trim_name.split('_')[i]] for i in xrange(1, 4)]
           color_code = self.codes[trim_name.split('_')[self.feature_index]]
-          self.train_X.append(np.append(p.get_features(self.train_dir + '/' + filename), np.array(quant_shape_shade)))
+          self.train_X.append(np.append(p.get_color_features(self.train_dir + '/' + filename), np.array(quant_shape_shade)))
           self.train_Y.append(color_code)
      
 
@@ -37,7 +37,7 @@ class ColorClassifier(FeatureClassifier):
         trim_name = filename.split('.')[0]
         quant_shape_shade = [ColorClassifier.CODES[trim_name.split('_')[i]] for i in xrange(1, 4)]
         color_code = self.codes[trim_name.split('_')[self.feature_index]]
-        self.train_X.append(np.append(p.get_features(self.train_dir + '/' + filename), np.array(quant_shape_shade)))
+        self.train_X.append(np.append(p.get_color_features(self.train_dir + '/' + filename), np.array(quant_shape_shade)))
         self.train_Y.append(color_code)
 
   def train(self):
