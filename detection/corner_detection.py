@@ -274,7 +274,11 @@ def find_closest_pair(cluster_im, centroid_angles, pt, unchosen_indexes, cluster
     return (min_dist_pt, min_dist_pt2)
 
 
-def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_im):
+def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_im, testing):
+
+    if testing:
+        np.random.seed(42)
+
     # plt.imshow(out_im)
     points = np.array(points)
     if points.shape[0] % 4 != 0:
@@ -408,7 +412,7 @@ if __name__ == "__main__":
     scores, sobel_image = shi_tomasi(grayscale)
 
     points = detect_max(scores)
-    grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image)
+    grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image, args.labels)
     card_clusters = np.concatenate(grouped_pts).reshape((num_cards, 4, 2))
     extract_cards(input_image, card_clusters, args.output_dir, args.labels, 0)
 
