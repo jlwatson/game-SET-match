@@ -1,6 +1,7 @@
 from sklearn.externals import joblib
 from sklearn.metrics import f1_score
 from classifiers.pixel_feature_extractor import PixelFeatureExtractor
+from classifiers.simple_color_classifier import *
 import os
 import pdb
 import numpy as np
@@ -54,26 +55,32 @@ class Pipeline:
         print "F1 Score for %s: %f" % (clf_name, f1)
 
     # Color
-    for i in xrange(1, 4):
-      clf_name = self.CLASSIFIER_NAMES[i]
-      clf = self.classifiers[i]
-
-      add_features = predictions[clf_name]
-
-      X = np.concatenate((X, np.array(add_features).reshape((12, 1))), axis=1)
-
     clf_name = self.CLASSIFIER_NAMES[0]
-    clf = self.classifiers[0]
-    cur_predictions = clf.predict(X)
+    cur_predictions = []
+    for filename in os.listdir(self.card_dir):
+      if filename.endswith(".jpg"):
+        cur_predictions.append(get_color(self.card_dir + '/' + filename))
+
+    # for i in xrange(1, 4):
+    #   clf_name = self.CLASSIFIER_NAMES[i]
+    #   clf = self.classifiers[i]
+
+    #   add_features = predictions[clf_name]
+
+    #   X = np.concatenate((X, np.array(add_features).reshape((12, 1))), axis=1)
+
+    # clf_name = self.CLASSIFIER_NAMES[0]
+    # clf = self.classifiers[0]
+    # cur_predictions = clf.predict(X)
     predictions[clf_name] = cur_predictions
     
     if self.testing:
-        f1 = f1_score(Y[:, i], cur_predictions, labels=[0, 1, 2], average='micro')
+        f1 = f1_score(Y[:, 0], cur_predictions, labels=[0, 1, 2], average='micro')
         print clf_name
         print "Predicted"
         print cur_predictions
         print "Actual"
-        print Y[:, i]
+        print Y[:, 0]
         print "F1 Score for %s: %f" % (clf_name, f1)
 
      
