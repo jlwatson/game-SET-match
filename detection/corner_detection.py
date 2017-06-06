@@ -5,18 +5,26 @@ Applies the Shi-Tomasi corner detector to extract corners from a given input
 image.
 '''
 
+import argparse
+from card_extractor import *
 import itertools as it
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import pdb
 from scipy.misc import imread, imresize, imsave, imrotate
 from scipy.signal import fftconvolve
 from scipy.spatial.distance import cdist
+# from skimage.exposure import adjust_sigmoid
 import sys
 import time
-import pdb
-from card_extractor import *
-import argparse
+
+
+WINDOW_RADIUS = 3
+CORNER_THRESHOLD = 1e6
+MAX_WINDOW_R = 4
+SOBEL_THRESH = 0.75
+
 
 '''
 Note: borrowed from jlwatson's grayscale implementation in PS0
@@ -26,10 +34,6 @@ def convert_to_grayscale(color_image):
            0.587 * color_image[:,:,1] + \
            0.114 * color_image[:,:,2]
 
-
-WINDOW_RADIUS = 3
-THRESHOLD = 1e6
-SOBEL_THRESH = 0.75
 
 def calc_gradients(image):
 
@@ -62,21 +66,19 @@ def sobel_filter(image):
     image = np.sqrt(Ix**2 + Iy**2)
     image = (image - np.min(image)) / (np.max(image) - np.min(image))
 
+    unthresh_im = np.array(image)
+
     # Threshold
     for r in range(image.shape[0]):
         for c in range(image.shape[1]):
             image[r,c] = 0.0 if image[r,c] < SOBEL_THRESH else 1.0
 
-    '''
-    plt.imshow(image, cmap='gray');
-    plt.show();
-    '''
-    return image, Ix, Iy
+    return image, Ix, Iy, unthresh_im
 
 
 def shi_tomasi(image):
 
-    image, Ix, Iy = sobel_filter(image)
+    image, Ix, Iy, unthresh_im = sobel_filter(image)
     
     ### For each x, y in the image, get matrix M and score using eigenvals ###
     Ix2, Iy2, Ixy = Ix**2, Iy**2, Ix*Iy
@@ -103,7 +105,7 @@ def shi_tomasi(image):
 
             eigenvals, _ = np.linalg.eig(M)
             score_val = min(eigenvals[0], eigenvals[1])
-            scores[y,x] = 0.0 if score_val < THRESHOLD or image[y,x] <= 0.0 else score_val
+            scores[y,x] = 0.0 if score_val < CORNER_THRESHOLD or image[y,x] <= 0.0 else score_val
 
     '''
     plt.imshow(scores, cmap='gray')
@@ -112,17 +114,17 @@ def shi_tomasi(image):
     return scores, image
 
 
-MAX_WINDOW_R = 3
-def detect_max(scores):
+def detect_max(scores, testing=False):
     top_scores = reversed([np.unravel_index(x,scores.shape) for x in np.argsort(scores, axis=None)])
 
     points = []
     for r, c in top_scores:
-        if scores[r,c] < THRESHOLD:
+        if scores[r,c] < CORNER_THRESHOLD:
             continue
 
         points.append((r,c))
-        plt.scatter(x=c, y=r, s=25, c='w')
+        if testing:
+            plt.scatter(x=c, y=r, s=25, c='w')
         row_min, col_min = max(r-MAX_WINDOW_R, 0), max(c-MAX_WINDOW_R, 0)
         row_max, col_max = min(scores.shape[0], r+MAX_WINDOW_R+1), min(scores.shape[1], c+MAX_WINDOW_R+1)
 
@@ -130,72 +132,6 @@ def detect_max(scores):
 
     return points
 
-
-def points_before(points, i, axis):
-    count = 0
-    for p in points:
-        if p[axis] < i:
-            count += 1
-
-    return count
-
-
-# points are in (r,c) pairs
-def create_segments(image, points):
-
-    points_by_row = sorted(points, key=lambda x: x[0])
-    points_by_col = sorted(points, key=lambda x: x[1])
-    minr, maxr = points_by_row[0][0], points_by_row[-1][0]
-    minc, maxc = points_by_col[0][1], points_by_col[-1][1]
-
-    row_boundaries, col_boundaries = [], [] 
-
-    goal = 0
-    temp = []
-    for r in range(minr-20, maxr+20):
-        before = points_before(points, r, 0)
-        if before == goal:
-            temp.append(r)
-        elif temp:
-            row_boundaries.append(int(np.average(temp)))
-            goal += 16
-            temp = []
-    row_boundaries.append(int(maxr))
-
-    goal = 0
-    temp = []
-    for c in range(minc-20, maxc+20):
-        before = points_before(points, c, 1)
-        if before == goal:
-            temp.append(c)
-        elif temp:
-            col_boundaries.append(int(np.average(temp)))
-            goal += 12
-            temp = []
-    col_boundaries.append(int(maxc))
-
-    for rb in row_boundaries:
-        plt.plot([0, image.shape[1]], [rb, rb], 'b')
-
-    for cb in col_boundaries:
-        plt.plot([cb, cb], [0, image.shape[0]], 'b')
-
-    return row_boundaries, col_boundaries
-
-def temp_card_assignments(row_boundaries, col_boundaries, points):
-    row_centers = [float(row_boundaries[i] + row_boundaries[i+1]) / 2 for i in range(len(row_boundaries) - 1)]
-    col_centers = [float(col_boundaries[i] + col_boundaries[i+1]) / 2 for i in range(len(col_boundaries) - 1)]
-    centroids = []
-    for rc in row_centers:
-        for cc in col_centers:
-            centroids.append((rc, cc))
-    card_points = [[] for i in xrange(len(centroids))]
-    points = np.array(points)
-    centroids = np.array(centroids)
-    for p in points:
-        card = min([(i, np.linalg.norm(p - c)) for i, c in enumerate(centroids)], key=lambda x:x[1])[0]
-        card_points[card].append(p)
-    return np.array(card_points)
 
 def kmeans(features, num_clusters, initial_centroids):
 
@@ -359,23 +295,22 @@ if __name__ == "__main__":
     parser.add_argument('image_name')
     parser.add_argument('output_dir')
     parser.add_argument('--labels', default=None)
+    parser.add_argument('--test_pt_detect', action='store_true')
     args = parser.parse_args()
 
     if not ".jpg" in args.image_name and not ".JPG" in args.image_name:
         print "Error: expecting JPG image input"
         exit(-1)
 
-    input_image = imresize(imread(args.image_name), 0.15)
-    # print "Input image shape"
-    # print input_image.shape
+    input_image = imresize(imread(args.image_name), (450, 615))
     grayscale = convert_to_grayscale(input_image)
 
-    sobel_image, Ix, Iy = sobel_filter(grayscale)
-
-    np.set_printoptions(precision=3, suppress=True, linewidth=1000)
+    sobel_image, Ix, Iy, unthresh_im = sobel_filter(grayscale)
+    if args.test_pt_detect:
+        plt.imshow(unthresh_im)
+        plt.show()
 
     features = np.vstack(sobel_image.nonzero()).T
-    # Features for potential X/Y gradient clustering
     actual_features = np.hstack(
         (
             np.array([Ix[features[:,0], features[:,1]]]).T,
@@ -411,7 +346,13 @@ if __name__ == "__main__":
 
     scores, sobel_image = shi_tomasi(grayscale)
 
-    points = detect_max(scores)
+    if args.test_pt_detect:
+        plt.imshow(output_image)
+    points = detect_max(scores, args.test_pt_detect)
+    if args.test_pt_detect:
+        plt.show()
+        exit(0)
+
     grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image, args.labels)
     card_clusters = np.concatenate(grouped_pts).reshape((num_cards, 4, 2))
     extract_cards(input_image, card_clusters, args.output_dir, args.labels, 0)
