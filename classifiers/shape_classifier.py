@@ -13,6 +13,6 @@ class ShapeClassifier(FeatureClassifier):
 		super(ShapeClassifier, self).__init__(train_dir, test_dir, base_dir, ShapeClassifier.SHAPE_CODES, 2)
 
 if __name__ == '__main__':
-  c = ShapeClassifier('../train_images_1', '../test_images_1', '../set_images')
+	c = ShapeClassifier('../train_images_1', '../test_images_1', '../set_images')
 	c.process_images()
 	c.train()
