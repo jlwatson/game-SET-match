@@ -16,6 +16,7 @@ import sys
 import time
 import pdb
 from card_extractor import *
+import argparse
 
 '''
 Note: borrowed from jlwatson's grayscale implementation in PS0
@@ -350,16 +351,19 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print "Usage: python corner_detection.py <input_image.jpg> <output dir>"
-        exit(-1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('image_name')
+    parser.add_argument('output_dir')
+    parser.add_argument('--labels', default=None)
+    args = parser.parse_args()
 
-    image_name = sys.argv[1]
-    if not ".jpg" in image_name:
+    if not ".jpg" in args.image_name:
         print "Error: expecting JPG image input"
         exit(-1)
 
-    input_image = imresize(imread(image_name), 0.15)
+    input_image = imresize(imread(args.image_name), 0.15)
+    # print "Input image shape"
+    # print input_image.shape
     grayscale = convert_to_grayscale(input_image)
 
     sobel_image, Ix, Iy = sobel_filter(grayscale)
