@@ -37,5 +37,4 @@ def extract_cards(img, card_clusters, dirname, card_name_file=None, crop_radius=
         # plt.scatter(card_corners[:, 1], card_corners[:, 0])
         # plt.subplot(122),plt.imshow(dst),plt.title('Output')
         # plt.show()
-        # card_img_tight = img[minR:maxR, minC:maxC]
         imsave(dirname+ '/' + card_names[img_index], dst)

@@ -13,12 +13,6 @@ class Pipeline:
 
   def __init__(self, card_dir="detection/output", testing=False):
     self.classifiers = [joblib.load('pipeline/color_clf.pkl'), joblib.load('pipeline/quantity_clf.pkl'), joblib.load('pipeline/shape_clf.pkl'), joblib.load('pipeline/shade_clf.pkl') ]
-    # self.color_clf = joblib.load('pipeline/color_clf.pkl') 
-    # self.shape_clf = joblib.load('pipeline/shape_clf.pkl') 
-    # self.shade_clf = joblib.load('pipeline/shade_clf.pkl') 
-    # self.quantity_clf = joblib.load('pipeline/quantity_clf.pkl') 
-    # self.X = []
-    # self.Y = []
     self.card_dir = card_dir
     self.testing = testing
 

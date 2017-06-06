@@ -177,7 +177,6 @@ def temp_card_assignments(row_boundaries, col_boundaries, points):
     for p in points:
         card = min([(i, np.linalg.norm(p - c)) for i, c in enumerate(centroids)], key=lambda x:x[1])[0]
         card_points[card].append(p)
-    print card_points
     return np.array(card_points)
 
 if __name__ == "__main__":
@@ -187,11 +186,6 @@ if __name__ == "__main__":
     parser.add_argument('--labels', default=None)
     args = parser.parse_args()
 
-    # if len(sys.argv) != 3:
-    #     print "Usage: python corner_detection.py <input_image.jpg> <output dir>"
-    #     exit(-1)
-
-    # image_name = sys.argv[1]
     if not ".jpg" in args.image_name:
         print "Error: expecting JPG image input"
         exit(-1)
