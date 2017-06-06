@@ -357,7 +357,7 @@ if __name__ == "__main__":
     parser.add_argument('--labels', default=None)
     args = parser.parse_args()
 
-    if not ".jpg" in args.image_name:
+    if not ".jpg" in args.image_name and not ".JPG" in args.image_name:
         print "Error: expecting JPG image input"
         exit(-1)
 
@@ -410,5 +410,5 @@ if __name__ == "__main__":
     points = detect_max(scores)
     grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image)
     card_clusters = np.concatenate(grouped_pts).reshape((num_cards, 4, 2))
-    extract_cards(input_image, card_clusters, sys.argv[2])
+    extract_cards(input_image, card_clusters, args.output_dir, args.labels, 0)
 
