@@ -197,6 +197,8 @@ if __name__ == "__main__":
         exit(-1)
 
     input_image = imresize(imread(args.image_name), 0.15)
+    # print "Input image shape"
+    # print input_image.shape
     grayscale = convert_to_grayscale(input_image)
 
     scores, sobel_image = shi_tomasi(grayscale)
@@ -205,13 +207,17 @@ if __name__ == "__main__":
     points = detect_max(scores)
     r_boundaries, c_boundaries = create_segments(sobel_image, points)
     card_clusters = temp_card_assignments(r_boundaries, c_boundaries, points)
-    extract_cards(input_image, card_clusters, args.output_dir, args.labels)
+    # plt.show()
+
+    extract_cards(input_image, card_clusters, args.output_dir, args.labels, 0)
     # Segment into groups of 4
     # Create a method that given four-point tuples returns rectified card images
     # for i in range(len(r_boundaries)-1):
     #     for j in range(len(c_boundaries)-1):
     #         segment = input_image[r_boundaries[i]:r_boundaries[i+1], c_boundaries[j]:c_boundaries[j+1]]
+    #         print "segment shape"
+    #         print segment.shape
     #         imsave(sys.argv[2]+"/image"+str(i)+str(j)+".jpg", segment)
 
-    plt.show()
+    
 

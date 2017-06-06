@@ -48,13 +48,19 @@ class Pipeline:
 
       cur_predictions = clf.predict(X)
       predictions[clf_name] = cur_predictions
+
       if self.testing:
         f1 = f1_score(Y[:, i], cur_predictions, labels=[0, 1, 2], average='micro')
+        print clf_name
+        print "Predicted"
+        print cur_predictions
+        print "Actual"
+        print Y[:, i]
         print "F1 Score for %s: %f" % (clf_name, f1)
 
 
-    print predictions
     return predictions
 
+os.system("python detection/corner_detection.py detection/test_input/on_center.jpg detection/output --labels detection/test_input/on_center_names.txt")
 p = Pipeline(testing=True, card_dir='detection/output')
 p.classify_cards()
