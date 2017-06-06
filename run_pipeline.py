@@ -35,8 +35,9 @@ class Pipeline:
       Y = np.array(Y)
 
 
+    # Quantity, shape, shade
     predictions = {}
-    for i in xrange(4):
+    for i in xrange(1, 4):
       clf_name = self.CLASSIFIER_NAMES[i]
       clf = self.classifiers[i]
 
@@ -52,9 +53,34 @@ class Pipeline:
         print Y[:, i]
         print "F1 Score for %s: %f" % (clf_name, f1)
 
+    # Color
+    for i in xrange(1, 4):
+      clf_name = self.CLASSIFIER_NAMES[i]
+      clf = self.classifiers[i]
 
+      add_features = predictions[clf_name]
+
+      X = np.concatenate((X, np.array(add_features).reshape((12, 1))), axis=1)
+
+    clf_name = self.CLASSIFIER_NAMES[0]
+    clf = self.classifiers[0]
+    cur_predictions = clf.predict(X)
+    predictions[clf_name] = cur_predictions
+    
+    pdb.set_trace()
+
+    if self.testing:
+        f1 = f1_score(Y[:, i], cur_predictions, labels=[0, 1, 2], average='micro')
+        print clf_name
+        print "Predicted"
+        print cur_predictions
+        print "Actual"
+        print Y[:, i]
+        print "F1 Score for %s: %f" % (clf_name, f1)
+
+     
     return predictions
 
-os.system("python detection/corner_detection.py detection/test_input/on_center.jpg detection/output --labels detection/test_input/on_center_names.txt")
+# os.system("python detection/corner_detection.py detection/test_input/on_center.jpg detection/output --labels detection/test_input/on_center_names.txt")
 p = Pipeline(testing=True, card_dir='detection/output')
 p.classify_cards()
