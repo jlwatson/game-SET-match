@@ -2,9 +2,12 @@ from sklearn.externals import joblib
 from sklearn.metrics import f1_score
 from classifiers.pixel_feature_extractor import PixelFeatureExtractor
 from classifiers.simple_color_classifier import *
+from finder.set_card import SetCard
+import finder.set_finder as set_finder
 import os
 import pdb
 import numpy as np
+
 
 class Pipeline:
 
@@ -83,9 +86,19 @@ class Pipeline:
         print Y[:, 0]
         print "F1 Score for %s: %f" % (clf_name, f1)
 
-     
-    return predictions
+    cards = []
+    for i in xrange(len(predictions['color'])):
+      color = predictions['color'][i]
+      quantity = predictions['quantity'][i]
+      shape = predictions['shape'][i]
+      shade = predictions['shade'][i]
+
+      cards.append(SetCard(color, quantity, shape, shade))
+
+    print cards
+    return cards
 
 # os.system("python detection/corner_detection.py detection/test_input/on_center.jpg detection/output --labels detection/test_input/on_center_names.txt")
 p = Pipeline(testing=True, card_dir='detection/output')
-p.classify_cards()
+cards = p.classify_cards()
+print set_finder.find(cards)
