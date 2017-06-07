@@ -23,7 +23,7 @@ import time
 WINDOW_RADIUS = 3
 CORNER_THRESHOLD = 1e6
 MAX_WINDOW_R = 4
-SOBEL_THRESH = 0.75
+SOBEL_THRESH = 0.73
 
 
 '''
@@ -210,10 +210,7 @@ def find_closest_pair(cluster_im, centroid_angles, pt, unchosen_indexes, cluster
     return (min_dist_pt, min_dist_pt2)
 
 
-def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_im, testing):
-
-    if testing:
-        np.random.seed(42)
+def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_im, test_grouping):
 
     # plt.imshow(out_im)
     points = np.array(points)
@@ -233,6 +230,9 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
 
     groups = []
     while unchosen.any():
+        if test_grouping:
+            plt.imshow(out_im)
+
         pt_index = np.random.choice(np.where(unchosen)[0], 1) 
         # print "chosen point:", points[pt_index][0]
         pt = points[pt_index][0]
@@ -265,28 +265,28 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
         pt1_idx_2 = np.array([unchosen_pt_indexes[pt1_idx_2]])
         pt2_idx_2 = np.array([unchosen_pt_indexes[pt2_idx_2]])
 
-        '''
-        plt.scatter(x=points[pt_index,1], y=points[pt_index,0], s=25, c='r')
-        plt.scatter(x=points[pt1_idx,1], y=points[pt1_idx,0], s=25, c='r')
-        plt.scatter(x=points[pt2_idx,1], y=points[pt2_idx,0], s=25, c='r')
-        '''
+        if test_grouping:
+            plt.scatter(x=points[pt_index,1], y=points[pt_index,0], s=25, c='r')
+            plt.scatter(x=points[pt1_idx,1], y=points[pt1_idx,0], s=25, c='r')
+            plt.scatter(x=points[pt2_idx,1], y=points[pt2_idx,0], s=25, c='r')
         if (points[pt1_idx_2][0] == pt).all():
             groups.append([pt, pt2, points[pt2_idx][0], points[pt2_idx_2][0]])
-            # plt.scatter(x=points[pt2_idx_2,1], y=points[pt2_idx_2,0], s=25, c='r')
+            if test_grouping: plt.scatter(x=points[pt2_idx_2,1], y=points[pt2_idx_2,0], s=25, c='r')
             unchosen[pt2_idx_2] = False
         elif (points[pt2_idx_2][0] == pt).all():
             groups.append([pt, pt2, points[pt2_idx][0], points[pt1_idx_2][0]])
-            # plt.scatter(x=points[pt1_idx_2,1], y=points[pt1_idx_2,0], s=25, c='r')
+            if test_gropuing: plt.scatter(x=points[pt1_idx_2,1], y=points[pt1_idx_2,0], s=25, c='r')
             unchosen[pt1_idx_2] = False
         else:
             print "ERROR: couldn't make group of 4, exiting."
             exit(-1)
 
+        if test_grouping:
+            plt.show()
 
         unchosen[pt_index] = False
         unchosen[pt2_idx] = False
 
-    # plt.show()
     return groups, len(groups)
 
 
@@ -296,13 +296,18 @@ if __name__ == "__main__":
     parser.add_argument('output_dir')
     parser.add_argument('--labels', default=None)
     parser.add_argument('--test_pt_detect', action='store_true')
+    parser.add_argument('--test_grouping', action='store_true')
+    parser.add_argument('--deterministic', action='store_true')
     args = parser.parse_args()
 
     if not ".jpg" in args.image_name and not ".JPG" in args.image_name:
         print "Error: expecting JPG image input"
         exit(-1)
 
-    input_image = imresize(imread(args.image_name), (450, 615))
+    if args.deterministic:
+        np.random.seed(42)
+
+    input_image = imresize(imread(args.image_name), (360, 640))
     grayscale = convert_to_grayscale(input_image)
 
     sobel_image, Ix, Iy, unthresh_im = sobel_filter(grayscale)
@@ -338,7 +343,7 @@ if __name__ == "__main__":
     for r in range(features.shape[0]):
         clustered_image[int(features[r,0]), int(features[r,1])] = centroid_assgs.pop(0) + 1
 
-    output_image = np.zeros((clustered_image.shape[0], clustered_image.shape[1], 3))
+    output_image = np.array(input_image)
     for r in range(clustered_image.shape[0]):
         for c in range(clustered_image.shape[1]):
             if clustered_image[r,c] == 0: continue
@@ -353,7 +358,7 @@ if __name__ == "__main__":
         plt.show()
         exit(0)
 
-    grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image, args.labels)
+    grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image, args.test_grouping)
     card_clusters = np.concatenate(grouped_pts).reshape((num_cards, 4, 2))
     extract_cards(input_image, card_clusters, args.output_dir, args.labels, 0)
 
