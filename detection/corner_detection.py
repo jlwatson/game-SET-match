@@ -23,7 +23,7 @@ import time
 WINDOW_RADIUS = 3
 CORNER_THRESHOLD = 1e6
 MAX_WINDOW_R = 4
-SOBEL_THRESH = 0.73
+SOBEL_THRESH = 0.77
 
 
 '''
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     for r in range(features.shape[0]):
         clustered_image[int(features[r,0]), int(features[r,1])] = centroid_assgs.pop(0) + 1
 
-    output_image = np.array(input_image)
+    output_image = np.zeros(input_image.shape)
     for r in range(clustered_image.shape[0]):
         for c in range(clustered_image.shape[1]):
             if clustered_image[r,c] == 0: continue
@@ -357,6 +357,9 @@ if __name__ == "__main__":
     if args.test_pt_detect:
         plt.show()
         exit(0)
+
+    if args.deterministic:
+        np.random.seed(42)
 
     grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image, args.test_grouping)
     card_clusters = np.concatenate(grouped_pts).reshape((num_cards, 4, 2))

@@ -98,7 +98,7 @@ class Pipeline:
     print cards
     return cards
 
-# os.system("python detection/corner_detection.py detection/test_input/on_center.jpg detection/output --labels detection/test_input/on_center_names.txt")
+os.system("python detection/corner_detection.py detection/test_input/wb_on_center.jpg detection/output --deterministic --labels detection/test_input/wb_on_center_names.txt")
 p = Pipeline(testing=True, card_dir='detection/output')
 cards = p.classify_cards()
 print set_finder.find(cards)
