@@ -1,9 +1,13 @@
 from sklearn.externals import joblib
 from sklearn.metrics import f1_score
 from classifiers.pixel_feature_extractor import PixelFeatureExtractor
+from classifiers.simple_color_classifier import *
+from finder.set_card import SetCard
+import finder.set_finder as set_finder
 import os
 import pdb
 import numpy as np
+
 
 class Pipeline:
 
@@ -35,8 +39,9 @@ class Pipeline:
       Y = np.array(Y)
 
 
+    # Quantity, shape, shade
     predictions = {}
-    for i in xrange(4):
+    for i in xrange(1, 4):
       clf_name = self.CLASSIFIER_NAMES[i]
       clf = self.classifiers[i]
 
@@ -52,9 +57,48 @@ class Pipeline:
         print Y[:, i]
         print "F1 Score for %s: %f" % (clf_name, f1)
 
+    # Color
+    clf_name = self.CLASSIFIER_NAMES[0]
+    cur_predictions = []
+    for filename in os.listdir(self.card_dir):
+      if filename.endswith(".jpg"):
+        cur_predictions.append(get_color(self.card_dir + '/' + filename))
 
-    return predictions
+    # for i in xrange(1, 4):
+    #   clf_name = self.CLASSIFIER_NAMES[i]
+    #   clf = self.classifiers[i]
 
-os.system("python detection/corner_detection.py detection/test_input/on_center.jpg detection/output --labels detection/test_input/on_center_names.txt")
+    #   add_features = predictions[clf_name]
+
+    #   X = np.concatenate((X, np.array(add_features).reshape((12, 1))), axis=1)
+
+    # clf_name = self.CLASSIFIER_NAMES[0]
+    # clf = self.classifiers[0]
+    # cur_predictions = clf.predict(X)
+    predictions[clf_name] = cur_predictions
+    
+    if self.testing:
+        f1 = f1_score(Y[:, 0], cur_predictions, labels=[0, 1, 2], average='micro')
+        print clf_name
+        print "Predicted"
+        print cur_predictions
+        print "Actual"
+        print Y[:, 0]
+        print "F1 Score for %s: %f" % (clf_name, f1)
+
+    cards = []
+    for i in xrange(len(predictions['color'])):
+      color = predictions['color'][i]
+      quantity = predictions['quantity'][i]
+      shape = predictions['shape'][i]
+      shade = predictions['shade'][i]
+
+      cards.append(SetCard(color, quantity, shape, shade))
+
+    print cards
+    return cards
+
+# os.system("python detection/corner_detection.py detection/test_input/on_center.jpg detection/output --labels detection/test_input/on_center_names.txt")
 p = Pipeline(testing=True, card_dir='detection/output')
-p.classify_cards()
+cards = p.classify_cards()
+print set_finder.find(cards)

@@ -64,6 +64,10 @@ class FeatureClassifier(object):
 
 		joblib.dump(lin_clf, '../pipeline/' + self.type + '_clf.pkl') 
 		return (score, f1)
+		# label_f1 = f1_score(self.test_Y, predictions, labels=[0, 1, 2], average=None)
+		# print str(label_f1)
+		# return (score, f1, predictions)
+		
 
 	def reset(self):
 		self.train_X = []
