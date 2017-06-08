@@ -27,8 +27,8 @@ def extract_cards(img, card_clusters, dirname, card_name_file=None, crop_radius=
         corner_transformed = np.float32([(0, 0), (0, IMG_WIDTH - 1), (IMG_HEIGHT - 1, 0), (IMG_HEIGHT - 1, IMG_WIDTH - 1)])
         minR, minC = np.amin(corner_orig, 0)
         maxR, maxC = np.amax(corner_orig, 0)
-        card_img = img[minR:maxR + 10, minC:maxC + 10]
-        card_corners = np.float32(corner_orig - (minR, minC))
+        card_img = img[minR-10:maxR + 10, minC-10:maxC + 10]
+        card_corners = np.float32(corner_orig - (minR, minC) + (10,10))
 
         M = cv2.getPerspectiveTransform(card_corners, corner_transformed)
         dst = cv2.warpPerspective(card_img,M,(IMG_WIDTH, IMG_HEIGHT))
