@@ -366,5 +366,5 @@ if __name__ == "__main__":
 
     grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image, args.test_grouping)
     card_clusters = np.concatenate(grouped_pts).reshape((num_cards, 4, 2))
-    extract_cards(orig_image, card_clusters, args.output_dir, ratio, args.labels, 0)
+    extract_cards(orig_image, card_clusters, args.output_dir, ratio, args.labels)
 

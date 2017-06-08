@@ -2,6 +2,8 @@ import numpy as np
 from scipy import misc
 import pdb
 import math
+# from skimage.feature import daisy
+# from skimage import data, color, exposure
 
 
 class PixelFeatureExtractor:
@@ -12,10 +14,13 @@ class PixelFeatureExtractor:
 	def __init__(self):
 		return
 
-	def get_features(self, imgfile, crop_radius=0):
+	def get_features(self, imgfile, crop_radius=5):
 		img = misc.imread(imgfile)
 		resized = misc.imresize(img, (PixelFeatureExtractor.NUM_ROWS, PixelFeatureExtractor.NUM_COLS))
-		# resized = resized[crop_radius:PixelFeatureExtractor.NUM_ROWS - crop_radius, crop_radius:PixelFeatureExtractor.NUM_COLS - crop_radius ]
+		resized = resized[crop_radius:PixelFeatureExtractor.NUM_ROWS - crop_radius, crop_radius:PixelFeatureExtractor.NUM_COLS - crop_radius ]
+		# resized_gray = color.rgb2gray(resized)
+		# daisy_features = daisy(resized_gray)
+		# pdb.set_trace()
 
 		return np.ndarray.flatten(resized)
 		

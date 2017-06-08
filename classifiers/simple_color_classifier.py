@@ -21,7 +21,7 @@ def get_color(img_filename):
   distance_purple = np.linalg.norm(mean_color - np.array([87., 17., 152.]) / 255)
   # distance_blue = np.linalg.norm(mean_color - (0, 0, 1))
   distances = [distance_green, distance_purple, distance_red]
-  print distances
+  # print distances
 
   width = int(math.sqrt(filtered_pixels.shape[0]))
 
