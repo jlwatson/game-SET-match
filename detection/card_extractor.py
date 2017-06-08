@@ -8,13 +8,14 @@ import string
 # IMG_WIDTH = 85
 # IMG_HEIGHT = 132
 
-def extract_cards(img, card_clusters, dirname, card_name_file=None, crop_radius=0):
+def extract_cards(img, card_clusters, dirname, ratio, card_name_file=None, crop_radius=0):
 
     card_names = ['image' + str(i) + '.jpg' for i in xrange(12)]
     if card_name_file is not None:
         fo = open(card_name_file, "r")
         card_names = [string.strip(name) for name in fo.readlines()]
     for img_index, corner_orig in enumerate(card_clusters):
+        corner_orig = corner_orig * ratio
         # Sort card corners in tl, bl, tr, br order
         ind = corner_orig.argsort(axis=0)[:,0]
         corner_orig = corner_orig[ind]
@@ -29,6 +30,7 @@ def extract_cards(img, card_clusters, dirname, card_name_file=None, crop_radius=
         maxR, maxC = np.amax(corner_orig, 0)
         card_img = img[minR-10:maxR + 10, minC-10:maxC + 10]
         card_corners = np.float32(corner_orig - (minR, minC) + (10,10))
+        # pdb.set_trace()
 
         # now that we have our rectangle of points, let's compute
         # the width of our new image
@@ -55,13 +57,14 @@ def extract_cards(img, card_clusters, dirname, card_name_file=None, crop_radius=
 
         M = cv2.getPerspectiveTransform(card_corners, dest_corners)
 
-        dst = cv2.warpPerspective(card_img, M ,(maxHeight, maxWidth))
+        dst = cv2.warpPerspective(card_img, M ,(300, 300))
         # dst = dst[crop_radius:IMG_HEIGHT - crop_radius, crop_radius:IMG_WIDTH - crop_radius ]
 
         # Uncomment to view transformation
-        # plt.subplot(121),plt.imshow(card_img),plt.title('Input')
-        # plt.scatter(card_corners[:, 1], card_corners[:, 0])
-        # plt.subplot(122),plt.imshow(dst),plt.title('Output')
-        # plt.show()
+        plt.subplot(121),plt.imshow(card_img),plt.title('Input')
+        plt.scatter(card_corners[:, 1], card_corners[:, 0])
+        plt.subplot(122),plt.imshow(dst),plt.title('Output')
+        plt.show()
+        pdb.set_trace()
         imsave(dirname+ '/' + card_names[img_index], dst)
 

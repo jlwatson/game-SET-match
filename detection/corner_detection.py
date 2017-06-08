@@ -307,7 +307,10 @@ if __name__ == "__main__":
     if args.deterministic:
         np.random.seed(42)
 
-    input_image = imresize(imread(args.image_name), (360, 640))
+    target_dims = (360, 640)
+    input_image = imresize(imread(args.image_name), target_dims)
+    orig_image = imread(args.image_name)
+    ratio = np.float32(orig_image.shape)[:2] / np.float32(target_dims)
     grayscale = convert_to_grayscale(input_image)
 
     sobel_image, Ix, Iy, unthresh_im = sobel_filter(grayscale)
@@ -363,5 +366,5 @@ if __name__ == "__main__":
 
     grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image, args.test_grouping)
     card_clusters = np.concatenate(grouped_pts).reshape((num_cards, 4, 2))
-    extract_cards(input_image, card_clusters, args.output_dir, args.labels, 0)
+    extract_cards(orig_image, card_clusters, args.output_dir, ratio, args.labels, 0)
 
