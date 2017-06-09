@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from pixel_feature_extractor import *
+from row_pixel_feature_extractor import *
 import pdb
 from sklearn.svm import LinearSVC
 from feature_classifier import *

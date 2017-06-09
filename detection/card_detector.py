@@ -3,6 +3,7 @@ import cv2
 import matplotlib.pyplot as plt
 import string
 import pdb
+import os
 
 class CardDetector:
 
@@ -26,10 +27,21 @@ class CardDetector:
     return hnew
 
   def getCards(self, imfile, output_dir, card_name_file=None):
+    if not os.path.exists(output_dir):
+      os.makedirs(output_dir)
     card_names = ['image' + str(i) + '.jpg' for i in xrange(12)]
     if card_name_file is not None:
         fo = open(card_name_file, "rU")
+        # img_name = imfile.split('.')[0]
         card_names = [string.strip(name) for name in fo.readlines()]
+        # card_names = []
+        # for name in fo.readlines():
+        #   parts = string.strip(name).split('.')
+        #   img_name = imfile.split('.')[0]
+        #   parts.insert(1, '_' + img_name)
+        #   label_name = ''.join(parts)
+        #   card_names.append(label_name)
+        # pdb.set_trace()
     im = cv2.imread(imfile)
     gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray,(1,1),1000)
