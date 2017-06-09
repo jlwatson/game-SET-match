@@ -1,0 +1,12 @@
+green_two_oval_stripe.jpg
+green_three_squiggle_stripe.jpg
+green_one_oval_solid.jpg
+purple_two_rhombus_stripe.jpg
+green_one_oval_stripe.jpg
+purple_one_rhombus_stripe.jpg
+purple_two_rhombus_solid.jpg
+green_three_rhombus_hollow.jpg
+red_two_squiggle_hollow.jpg
+red_one_oval_hollow.jpg
+red_one_squiggle_stripe.jpg
+green_one_squiggle_hollow.jpg
