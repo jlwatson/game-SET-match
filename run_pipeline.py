@@ -13,6 +13,7 @@ import numpy as np
 class Pipeline:
 
   CLASSIFIER_NAMES = ['color', 'quantity', 'shape', 'shade']
+  FEATURE_MAPPINGS = ['standard', 'standard', 'standard', 'standard']
 
   CODES = dict({'oval': 0, 'squiggle': 1, 'rhombus': 2, 'stripe': 0, 'solid': 1, 'hollow': 2, 'one': 0, 'two': 1, 'three': 2, 'green': 0, 'purple': 1, 'red': 2})
 
@@ -24,10 +25,13 @@ class Pipeline:
   def classify_cards(self):
     p = PixelFeatureExtractor()
     Y = []
-    X = []
+    features = {}
+    color_predictions = []
     for subdir, dirs, files in os.walk(self.root_dir):
       for card_dir in dirs:
         print card_dir
+        standard_features = []
+        color_features = []
         for filename in os.listdir(self.root_dir + '/' + card_dir):
           # print filename
           if filename.endswith(".jpg"):
@@ -36,27 +40,24 @@ class Pipeline:
               labels = trim_name.split('_')
               label_vals = [self.CODES[label] for i, label in enumerate(labels)]
               Y.append(label_vals)
-            X.append(p.get_features(self.root_dir + '/' + card_dir + '/' + filename))
+            img_filepath = self.root_dir + '/' + card_dir + '/' + filename
+            standard_features.append(p.get_features(img_filepath))
+            color_predictions.append(get_color(img_filepath))
+    features['standard'] = standard_features
+
 
     if self.testing:
       Y = np.array(Y)
 
-
-    # Quantity, shape, shade
     predictions = {}
     for i in xrange(0, 4):
       clf_name = self.CLASSIFIER_NAMES[i]
-      clf = self.classifiers[i]
-
       if i == 0:
-        cur_predictions = []
-        for subdir, dirs, files in os.walk(self.root_dir):
-          for card_dir in dirs:
-            for filename in os.listdir(self.root_dir + '/' + card_dir):
-              if filename.endswith(".jpg"):
-                cur_predictions.append(get_color(self.root_dir + '/' + card_dir + '/' + filename))
-        predictions[clf_name] = cur_predictions
+        cur_predictions = color_predictions
+        predictions[clf_name] = color_predictions
       else:
+        X = features[self.FEATURE_MAPPINGS[i]]
+        clf = self.classifiers[i]
         cur_predictions = clf.predict(X)
         predictions[clf_name] = cur_predictions
 
@@ -68,22 +69,6 @@ class Pipeline:
         print "Actual"
         print Y[:, i]
         print "F1 Score for %s: %f" % (clf_name, f1)
-
-    # Color
-    # clf_name = self.CLASSIFIER_NAMES[0]
-    # cur_predictions = []
-    
-
-    # predictions[clf_name] = cur_predictions
-    
-    # if self.testing:
-    #     f1 = f1_score(Y[:, 0], cur_predictions, labels=[0, 1, 2], average='micro')
-    #     print clf_name
-    #     print "Predicted"
-    #     print cur_predictions
-    #     print "Actual"
-    #     print Y[:, 0]
-    #     print "F1 Score for %s: %f" % (clf_name, f1)
 
     cards = []
     for i in xrange(len(predictions['color'])):
@@ -116,6 +101,6 @@ class Pipeline:
 
 
 p = Pipeline(testing=True, root_dir='detection/output')
-p.detect_cards()
+# p.detect_cards()
 cards = p.classify_cards()
 # print set_finder.find(cards)
