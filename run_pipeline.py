@@ -99,9 +99,25 @@ class Pipeline:
     print cards
     return cards
 
+  def detect_cards(self, root_dir='better_game_images/'):
+    c = CardDetector()
+    for filename in os.listdir(root_dir):
+      if filename.endswith(".JPG"):
+        img_name = filename.split('.')[0]
+        label_filename = root_dir + img_name + '_labels.txt'
+        if int(os.path.getsize(label_filename)) > 0:
+          # labels exist and are complete
+          c.getCards(root_dir + filename, 'detection/output', card_name_file=label_filename)
+          print "Got cards for " + img_name
+
 # os.system("python detection/corner_detection.py detection/test_input/wb_on_center.jpg detection/output --deterministic --labels detection/test_input/wb_on_center_names.txt")
-c = CardDetector()
-c.getCards('detection/test_input/wb_on_center.jpg', 'detection/output', card_name_file='detection/test_input/wb_on_center_names.txt')
+# c = CardDetector()
+# c.getCards('detection/test_input/wb_on_center.jpg', 'detection/output', card_name_file='detection/test_input/wb_on_center_names.txt')
+# c.getCards('better_game_images/IMG_0236.jpg', 'detection/output', card_name_file='better_game_images/IMG_0236_labels.txt')
+
+
+
 p = Pipeline(testing=True, card_dir='detection/output')
+# p.detect_cards()
 cards = p.classify_cards()
 print set_finder.find(cards)
