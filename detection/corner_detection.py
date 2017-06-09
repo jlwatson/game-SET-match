@@ -15,7 +15,6 @@ import pdb
 from scipy.misc import imread, imresize, imsave, imrotate
 from scipy.signal import fftconvolve
 from scipy.spatial.distance import cdist
-# from skimage.exposure import adjust_sigmoid
 import sys
 import time
 
@@ -24,6 +23,21 @@ WINDOW_RADIUS = 3
 CORNER_THRESHOLD = 1e6
 MAX_WINDOW_R = 4
 SOBEL_THRESH = 0.77
+IMG_SCALE = 0.5
+
+
+def order_corners(card):
+    card_new = np.zeros((4,2), dtype = np.float32)
+
+    add = card.sum(1)
+    card_new[0] = card[np.argmin(add)]
+    card_new[2] = card[np.argmax(add)]
+     
+    diff = np.diff(card, axis = 1)
+    card_new[1] = card[np.argmin(diff)]
+    card_new[3] = card[np.argmax(diff)]
+
+    return card_new
 
 
 '''
@@ -158,7 +172,10 @@ def clusters_near_point(cluster_im, pt):
     RAD = 3
 
     window = cluster_im[pt[0]-RAD:pt[0]+RAD+1, pt[1]-RAD:pt[1]+RAD+1]
-    cluster1, cluster2 = list(np.trim_zeros(np.unique(window))[:2])
+    unique_vals = np.unique(window)
+    non_zero_vals = np.trim_zeros(unique_vals)
+
+    cluster1, cluster2 = list(non_zero_vals)[:2]
     return cluster1, cluster2
 
 
@@ -169,6 +186,7 @@ def find_closest_pair(cluster_im, centroid_angles, pt, unchosen_indexes, cluster
     RADIAN_THRESH = 0.8
 
     cluster1, cluster2 = clusters_near_point(cluster_im, pt)
+
     valid_indices = cluster_map[cluster1].union(cluster_map[cluster2])
 
     cluster1_angle, cluster2_angle = centroid_angles[cluster1-1], centroid_angles[cluster2-1]
@@ -215,7 +233,7 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
     # plt.imshow(out_im)
     points = np.array(points)
     if points.shape[0] % 4 != 0:
-        print "WARNING: number of corners detected is not a multiple of 4"
+        print "Warning: number of corners detected is not a multiple of 4"
 
     unchosen = np.ones((points.shape[0],1), dtype=bool)
     distances = cdist(points, points)
@@ -229,7 +247,7 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
         cluster_map[c2].add(r)
 
     groups = []
-    while unchosen.any():
+    while np.count_nonzero(unchosen) >= 4:
         if test_grouping:
             plt.imshow(out_im)
 
@@ -245,6 +263,7 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
         # print "distances:", distances[unchosen_pt_indexes, pt_index]
         pt1_idx, pt2_idx = find_closest_pair(cluster_im, centroid_angles, pt, unchosen_pt_indexes, 
             cluster_map, distances[unchosen_pt_indexes, pt_index], angles, sobel_Ix, sobel_Iy)
+
         # pt1_u_idx = pt1_idx
         # pt2_u_idx = pt2_idx
         pt1_idx = np.array([unchosen_pt_indexes[pt1_idx]])
@@ -262,6 +281,7 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
 
         pt1_idx_2, pt2_idx_2 = find_closest_pair(cluster_im, centroid_angles, pt2, unchosen_pt_indexes,
             cluster_map, distances[unchosen_pt_indexes, pt1_idx], angles, sobel_Ix, sobel_Iy)
+
         pt1_idx_2 = np.array([unchosen_pt_indexes[pt1_idx_2]])
         pt2_idx_2 = np.array([unchosen_pt_indexes[pt2_idx_2]])
 
@@ -275,11 +295,11 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
             unchosen[pt2_idx_2] = False
         elif (points[pt2_idx_2][0] == pt).all():
             groups.append([pt, pt2, points[pt2_idx][0], points[pt1_idx_2][0]])
-            if test_gropuing: plt.scatter(x=points[pt1_idx_2,1], y=points[pt1_idx_2,0], s=25, c='r')
+            if test_grouping: plt.scatter(x=points[pt1_idx_2,1], y=points[pt1_idx_2,0], s=25, c='r')
             unchosen[pt1_idx_2] = False
         else:
-            print "ERROR: couldn't make group of 4, exiting."
-            exit(-1)
+            print "couldn't make group of 4, continuing."
+            continue
 
         if test_grouping:
             plt.show()
@@ -290,30 +310,16 @@ def group_points(points, cluster_im, cluster_centroids, sobel_Ix, sobel_Iy, out_
     return groups, len(groups)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('image_name')
-    parser.add_argument('output_dir')
-    parser.add_argument('--labels', default=None)
-    parser.add_argument('--test_pt_detect', action='store_true')
-    parser.add_argument('--test_grouping', action='store_true')
-    parser.add_argument('--deterministic', action='store_true')
-    args = parser.parse_args()
+def detect_corners(image_name, test_pt_detect, test_grouping, deterministic):
 
-    if not ".jpg" in args.image_name and not ".JPG" in args.image_name:
-        print "Error: expecting JPG image input"
-        exit(-1)
-
-    if args.deterministic:
+    if deterministic:
         np.random.seed(42)
 
-    input_image = imresize(imread(args.image_name), (360, 640))
+    orig_image = imread(image_name)
+    input_image = imresize(orig_image, IMG_SCALE)
     grayscale = convert_to_grayscale(input_image)
 
     sobel_image, Ix, Iy, unthresh_im = sobel_filter(grayscale)
-    if args.test_pt_detect:
-        plt.imshow(unthresh_im)
-        plt.show()
 
     features = np.vstack(sobel_image.nonzero()).T
     actual_features = np.hstack(
@@ -351,17 +357,46 @@ if __name__ == "__main__":
 
     scores, sobel_image = shi_tomasi(grayscale)
 
-    if args.test_pt_detect:
+    if test_pt_detect:
         plt.imshow(output_image)
-    points = detect_max(scores, args.test_pt_detect)
-    if args.test_pt_detect:
+    points = detect_max(scores, test_pt_detect)
+    if test_pt_detect:
         plt.show()
         exit(0)
 
-    if args.deterministic:
+    if deterministic:
         np.random.seed(42)
 
-    grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image, args.test_grouping)
+    grouped_pts, num_cards = group_points(points, clustered_image, centroids, Ix, Iy, output_image, test_grouping)
     card_clusters = np.concatenate(grouped_pts).reshape((num_cards, 4, 2))
-    extract_cards(input_image, card_clusters, args.output_dir, args.labels, 0)
+
+    for c in range(card_clusters.shape[0]):
+        card = np.flip(order_corners(card_clusters[c]) * (1/IMG_SCALE), 1)
+        target = np.array([[0,0],[449,0],[449,449],[0,449]], np.float32)
+
+        P = cv2.getPerspectiveTransform(card, target)
+        warp = cv2.warpPerspective(orig_image, P, (450, 450))
+        resized = cv2.resize(np.rot90(warp), (138, 210))
+        plt.imshow(resized)
+        plt.show()
+     
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('image_name')
+    parser.add_argument('--test_pt_detect', action='store_true')
+    parser.add_argument('--test_grouping', action='store_true')
+    parser.add_argument('--deterministic', action='store_true')
+    args = parser.parse_args()
+
+    if not ".jpg" in args.image_name and not ".JPG" in args.image_name:
+        print "Error: expecting JPG image input"
+        exit(-1)
+
+    detect_corners(args.image_name, args.test_pt_detect, args.test_grouping, args.deterministic)
+
+
+
+
 
