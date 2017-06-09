@@ -8,7 +8,7 @@ from sklearn.externals import joblib
 
 class FeatureClassifier(object):
 
-	def __init__(self, train_dir, test_dir, base_dir, codes, feature_index, featureType='unknown'):
+	def __init__(self, train_dir, test_dir, base_dir, codes, feature_index, featureType='unknown', pfe=None):
 		self.train_dir = train_dir
 		self.test_dir = test_dir
 		self.base_dir = base_dir
@@ -19,10 +19,14 @@ class FeatureClassifier(object):
 		self.codes = codes
 		self.feature_index = feature_index
 		self.type = featureType
+		if pfe is None:
+			self.pfe = PixelFeatureExtractor()
+		else:
+			self.pfe = pfe
 
 
 	def process_images(self):
-		p = PixelFeatureExtractor()
+		p = self.pfe
 		for filename in os.listdir(self.train_dir):
 			if filename.endswith(".jpg"):
 				trim_name = filename.split('.')[0]
@@ -37,7 +41,7 @@ class FeatureClassifier(object):
 				self.test_Y.append(shape_code)
 
 	def process_images_split_dir(self, train_names, test_names):
-		p = PixelFeatureExtractor()
+		p = self.pfe
 		for filename in train_names:
 			trim_name = filename.split('.')[0]
 			shape_code = self.codes[trim_name.split('_')[self.feature_index]]

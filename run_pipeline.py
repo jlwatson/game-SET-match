@@ -2,6 +2,7 @@ from sklearn.externals import joblib
 from sklearn.metrics import f1_score
 from classifiers.pixel_feature_extractor import PixelFeatureExtractor
 from classifiers.simple_color_classifier import *
+from classifiers.row_pixel_feature_extractor import RowPixelFeatureExtractor
 from finder.set_card import SetCard
 from detection.card_detector import CardDetector
 import finder.set_finder as set_finder
@@ -13,7 +14,7 @@ import numpy as np
 class Pipeline:
 
   CLASSIFIER_NAMES = ['color', 'quantity', 'shape', 'shade']
-  FEATURE_MAPPINGS = ['standard', 'standard', 'standard', 'standard']
+  FEATURE_MAPPINGS = ['standard', 'standard', 'standard', 'shade']
 
   CODES = dict({'oval': 0, 'squiggle': 1, 'rhombus': 2, 'stripe': 0, 'solid': 1, 'hollow': 2, 'one': 0, 'two': 1, 'three': 2, 'green': 0, 'purple': 1, 'red': 2})
 
@@ -24,6 +25,7 @@ class Pipeline:
 
   def classify_cards(self):
     p = PixelFeatureExtractor()
+    rp = RowPixelFeatureExtractor()
     Y = []
     features = {}
     color_predictions = []
@@ -32,6 +34,7 @@ class Pipeline:
         print card_dir
         standard_features = []
         color_features = []
+        shade_features = []
         for filename in os.listdir(self.root_dir + '/' + card_dir):
           # print filename
           if filename.endswith(".jpg"):
@@ -43,7 +46,11 @@ class Pipeline:
             img_filepath = self.root_dir + '/' + card_dir + '/' + filename
             standard_features.append(p.get_features(img_filepath))
             color_predictions.append(get_color(img_filepath))
+            shade_features.append(rp.get_features(img_filepath))
+    features['shade'] = shade_features
     features['standard'] = standard_features
+
+
 
 
     if self.testing:
