@@ -32,6 +32,3 @@ def train_all(train_dir, test_dir, base_dir):
 
 if __name__ == '__main__':
   train_all('../train_images_1', '../test_images_1', '../set_images')
-
-
-distance_green = color.rgb2gray(1 - np.abs(image - (0, 1, 0)))

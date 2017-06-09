@@ -62,6 +62,6 @@ class CardDetector:
       # plt.show()
       # pdb.set_trace()
 
-
-c = CardDetector()
-c.getCards('test_input/wb_on_center.jpg', 'output', 'test_input/wb_on_center_names.txt')
+# Usage
+# c = CardDetector()
+# c.getCards('test_input/wb_on_center.jpg', 'output', 'test_input/wb_on_center_names.txt')

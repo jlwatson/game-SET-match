@@ -3,6 +3,7 @@ from sklearn.metrics import f1_score
 from classifiers.pixel_feature_extractor import PixelFeatureExtractor
 from classifiers.simple_color_classifier import *
 from finder.set_card import SetCard
+from detection.card_detector import CardDetector
 import finder.set_finder as set_finder
 import os
 import pdb
@@ -99,6 +100,8 @@ class Pipeline:
     return cards
 
 # os.system("python detection/corner_detection.py detection/test_input/wb_on_center.jpg detection/output --deterministic --labels detection/test_input/wb_on_center_names.txt")
+c = CardDetector()
+c.getCards('detection/test_input/wb_on_center.jpg', 'detection/output', card_name_file='detection/test_input/wb_on_center_names.txt')
 p = Pipeline(testing=True, card_dir='detection/output')
 cards = p.classify_cards()
 print set_finder.find(cards)
