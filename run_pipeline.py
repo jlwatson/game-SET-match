@@ -1,5 +1,4 @@
 from sklearn.externals import joblib
-from sklearn.metrics import f1_score
 from classifiers.pixel_feature_extractor import PixelFeatureExtractor
 from classifiers.simple_color_classifier import *
 from finder.set_card import SetCard
@@ -9,12 +8,14 @@ import os
 import pdb
 import numpy as np
 import time
+from sklearn import metrics
 
 
 class Pipeline:
 
   CLASSIFIER_NAMES = ['color', 'quantity', 'shape', 'shade']
   FEATURE_MAPPINGS = ['standard', 'standard', 'standard', 'standard']
+  LABELS = [['green', 'purple', 'red'], ['one', 'two', 'three'], ['oval', 'squiggle', 'rhombus'], ['stripe', 'solid', 'hollow']]
 
   CODES = dict({'oval': 0, 'squiggle': 1, 'rhombus': 2, 'stripe': 0, 'solid': 1, 'hollow': 2, 'one': 0, 'two': 1, 'three': 2, 'green': 0, 'purple': 1, 'red': 2})
 
@@ -68,13 +69,25 @@ class Pipeline:
         self.predictions[clf_name] = cur_predictions
 
       if self.testing:
-        f1 = f1_score(self.labels[:, i], cur_predictions, labels=[0, 1, 2], average='micro')
-        print clf_name
+        f1 = metrics.f1_score(self.labels[:, i], cur_predictions, labels=[0, 1, 2], average='micro')
+        true_labels = self.labels[:, i]
+        print "===================== " + clf_name + " ========================="
         print "Predicted"
         print cur_predictions
         print "Actual"
-        print self.labels[:, i]
+        print true_labels
         print "F1 Score for %s: %f" % (clf_name, f1)
+        print("\nConfusion Matrix:\n")
+        cm = metrics.confusion_matrix(true_labels, cur_predictions).tolist()
+        self.pretty_print_cm(cm, self.LABELS[i])
+        print("\nClassification Results:\n")
+        print(metrics.classification_report(true_labels, cur_predictions, target_names=self.LABELS[i]))
+
+  def pretty_print_cm(self, cm, class_labels):
+      row_format = "{:>8}" * (len(class_labels) + 1)
+      print(row_format.format("", *class_labels))
+      for l1, row in zip(class_labels, cm):
+          print(row_format.format(l1, *row))
 
   def detect_cards(self, root_dir='better_game_images/'):
     c = CardDetector()
@@ -100,15 +113,15 @@ class Pipeline:
       cards.append(SetCard(color, quantity, shape, shade))
     cards_reshaped = np.reshape(np.array(cards), (self.num_boards, 12))
     for board in cards_reshaped:
-      # print board
+      print board
       print set_finder.find(board)
     
 
   def run_all(self):
     start = time.time()
-    self.detect_cards()
+    # self.detect_cards()
     self.classify_cards()
-    self.find_sets()
+    # self.find_sets()
     end = time.time()
     runtime = end - start
     print "Elapsed time: %d" % runtime
@@ -124,7 +137,7 @@ class Pipeline:
 
 
 
-p = Pipeline(testing=False, root_dir='detection/output', testOnlyOne=False)
+p = Pipeline(testing=True, root_dir='detection/output', testOnlyOne=False)
 # p.detect_cards()
 # p.classify_cards()
 # p.find_sets()
