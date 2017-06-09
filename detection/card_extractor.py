@@ -29,8 +29,8 @@ def extract_cards(img, card_clusters, dirname, ratio, card_name_file=None, crop_
         minR, minC = np.amin(corner_orig, 0)
         maxR, maxC = np.amax(corner_orig, 0)
         card_img = img[minR-10:maxR + 10, minC-10:maxC + 10]
-        card_corners = np.float32(corner_orig - (minR, minC) + (10,10))
-        # card_corners = np.float32(corner_orig)
+        # card_corners = np.float32(corner_orig - (minR, minC) + (10,10))
+        card_corners = np.float32(corner_orig)
         # pdb.set_trace()
 
         # now that we have our rectangle of points, let's compute
@@ -47,6 +47,9 @@ def extract_cards(img, card_clusters, dirname, ratio, card_name_file=None, crop_
         # our final dimensions
         maxWidth = max(int(widthA), int(widthB))
         maxHeight = max(int(heightA), int(heightB))
+
+        maxWidth = 300
+        maxHeight = 300
 
         # construct our destination points which will be used to
         # map the screen to a top-down, "birds eye" view
@@ -70,11 +73,11 @@ def extract_cards(img, card_clusters, dirname, ratio, card_name_file=None, crop_
         cropped = dst[crop_radius:maxHeight - crop_radius, crop_radius:maxWidth - crop_radius ]
 
         # Uncomment to view transformation
-        # plt.subplot(121),plt.imshow(card_img),plt.title('Input')
-        # plt.scatter(card_corners[:, 1], card_corners[:, 0])
-        # plt.subplot(122),plt.imshow(cropped),plt.title('Output')
-        # plt.scatter(new_corners[:, 1], new_corners[:, 0])
-        # plt.show()
-        # pdb.set_trace()
+        plt.subplot(121),plt.imshow(img),plt.title('Input')
+        plt.scatter(card_corners[:, 1], card_corners[:, 0])
+        plt.subplot(122),plt.imshow(cropped),plt.title('Output')
+        plt.scatter(new_corners[:, 1], new_corners[:, 0])
+        plt.show()
+        pdb.set_trace()
         imsave(dirname+ '/' + card_names[img_index], cropped)
 
