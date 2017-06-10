@@ -54,7 +54,7 @@ class Pipeline:
             img_filepath = self.root_dir + '/' + card_dir + '/' + filename
             standard_features.append(p.get_features(img_filepath))
             color_predictions.append(get_color(img_filepath))
-            shade_features.append(rp.get_features(img_filepath))
+            shade_features.append(p.get_features(img_filepath))
     features['shade'] = shade_features
     features['standard'] = standard_features
     print "%d total boards" % self.num_boards
