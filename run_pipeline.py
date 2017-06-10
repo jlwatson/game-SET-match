@@ -40,9 +40,6 @@ class Pipeline:
         dirs = dirs[:1]
       for card_dir in dirs:
         print card_dir
-        standard_features = []
-        color_features = []
-        shade_features = []
         self.num_boards += 1
         for filename in os.listdir(self.root_dir + '/' + card_dir):
           # print filename
@@ -55,8 +52,6 @@ class Pipeline:
             img_filepath = self.root_dir + '/' + card_dir + '/' + filename
             standard_features.append(p.get_features(img_filepath))
             color_predictions.append(get_color(img_filepath))
-            shade_features.append(p.get_features(img_filepath))
-    features['shade'] = shade_features
     features['standard'] = standard_features
     print "%d total boards" % self.num_boards
 
@@ -128,9 +123,9 @@ class Pipeline:
 
   def run_all(self):
     start = time.time()
-    # self.detect_cards()
+    self.detect_cards()
     self.classify_cards()
-    # self.find_sets()
+    self.find_sets()
     end = time.time()
     runtime = end - start
     print "Elapsed time: %d" % runtime
