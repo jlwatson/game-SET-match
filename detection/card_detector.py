@@ -61,7 +61,7 @@ class CardDetector:
       # cv2.drawContours(im,[box],0,(255,255,0),6)
       # imx = cv2.resize(im,(1000,600))
       # plt.imshow(imx)
-      # plt.title('a')
+      # plt.title('Contours')
       # plt.show()
       
       h = np.array([ [0,0],[449,0],[449,449],[0,449] ],np.float32)
@@ -70,6 +70,7 @@ class CardDetector:
       warp = cv2.warpPerspective(im,transform,(450,450))
       resized = cv2.resize(warp, (138, 210))
       cv2.imwrite(output_dir + '/' + card_names[i], resized)
+    
       # plt.imshow(warp)
       # plt.title('warp')
       # plt.show()
@@ -77,4 +78,4 @@ class CardDetector:
 
 # Usage
 # c = CardDetector()
-# c.getCards('test_input/wb_on_center.jpg', 'output', 'test_input/wb_on_center_names.txt')
+# c.getCards('../better_game_images/IMG_0236.jpg', 'output/IMG_0236', '../better_game_images/IMG_0236_labels.txt')
