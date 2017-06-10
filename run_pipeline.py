@@ -1,6 +1,7 @@
 from sklearn.externals import joblib
 from classifiers.pixel_feature_extractor import PixelFeatureExtractor
 from classifiers.simple_color_classifier import *
+from classifiers.row_pixel_feature_extractor import RowPixelFeatureExtractor
 from finder.set_card import SetCard
 from detection.card_detector import CardDetector
 import finder.set_finder as set_finder
@@ -30,6 +31,7 @@ class Pipeline:
 
   def classify_cards(self):
     p = PixelFeatureExtractor()
+    Y = []
     features = {}
     color_predictions = []
     standard_features = []
@@ -38,6 +40,9 @@ class Pipeline:
         dirs = dirs[:1]
       for card_dir in dirs:
         print card_dir
+        standard_features = []
+        color_features = []
+        shade_features = []
         self.num_boards += 1
         for filename in os.listdir(self.root_dir + '/' + card_dir):
           # print filename
@@ -50,8 +55,12 @@ class Pipeline:
             img_filepath = self.root_dir + '/' + card_dir + '/' + filename
             standard_features.append(p.get_features(img_filepath))
             color_predictions.append(get_color(img_filepath))
+            shade_features.append(p.get_features(img_filepath))
+    features['shade'] = shade_features
     features['standard'] = standard_features
     print "%d total boards" % self.num_boards
+
+
 
 
     if self.testing:
